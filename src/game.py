@@ -4,8 +4,19 @@ import pygame
 
 from mlgame.game.paia_game import GameStatus, GameResultState, PaiaGame
 from mlgame.view.decorator import check_game_progress, check_game_result
-from mlgame.view.view_model import create_text_view_data, Scene, create_scene_progress_data
-from .game_object import Ball, Platform, Brick, HardBrick, PlatformAction, SERVE_BALL_ACTIONS
+from mlgame.view.view_model import (
+    create_text_view_data,
+    Scene,
+    create_scene_progress_data,
+)
+from .game_object import (
+    Ball,
+    Platform,
+    Brick,
+    HardBrick,
+    PlatformAction,
+    SERVE_BALL_ACTIONS,
+)
 
 
 class Arkanoid(PaiaGame):
@@ -23,16 +34,18 @@ class Arkanoid(PaiaGame):
 
     def update(self, commands):
         ai_1p_cmd = commands[self.ai_clients()[0]["name"]]
-        command = (PlatformAction(ai_1p_cmd)
-                   if ai_1p_cmd in PlatformAction.__members__ else PlatformAction.NONE)
+        command = (
+            PlatformAction(ai_1p_cmd)
+            if ai_1p_cmd in PlatformAction.__members__
+            else PlatformAction.NONE
+        )
 
         self.frame_count += 1
         self._platform.move(command)
 
         if not self.ball_served:
             # Force to serve the ball after 150 frames
-            if (self.frame_count >= 150 and
-                    command not in SERVE_BALL_ACTIONS):
+            if self.frame_count >= 150 and command not in SERVE_BALL_ACTIONS:
                 command = random.choice(SERVE_BALL_ACTIONS)
 
             self._wait_for_serving_ball(command)
@@ -71,7 +84,7 @@ class Arkanoid(PaiaGame):
             "ball_served": self.ball_served,
             "platform": self._platform.pos,
             "bricks": [],
-            "hard_bricks": []
+            "hard_bricks": [],
         }
         for brick in self._hard_brick:
             data_to_1p["hard_bricks"].append(brick.pos)
@@ -80,7 +93,7 @@ class Arkanoid(PaiaGame):
             data_to_1p["bricks"].append(brick.pos)
 
         for ai_client in self.ai_clients():
-            to_players_data[ai_client['name']] = data_to_1p
+            to_players_data[ai_client["name"]] = data_to_1p
 
         return to_players_data
 
@@ -109,7 +122,7 @@ class Arkanoid(PaiaGame):
         return self.get_game_status() == GameStatus.GAME_ALIVE
 
     def get_scene_init_data(self):
-        scene_init_data = {"scene": self.scene.__dict__,"assets": []}
+        scene_init_data = {"scene": self.scene.__dict__, "assets": []}
         return scene_init_data
 
     @check_game_progress
@@ -129,21 +142,33 @@ class Arkanoid(PaiaGame):
         game_obj_list.extend(lines)
 
         catch_ball_text = create_text_view_data(
-            "catching ball: " + str(self._ball.hit_platform_times), 1,
-            self.scene.height - 21, "#FFFFFF", "18px Arial")
+            "catching ball: " + str(self._ball.hit_platform_times),
+            1,
+            self.scene.height - 21,
+            "#FFFFFF",
+            "18px Arial",
+        )
 
         remain_brick_text = create_text_view_data(
-            "remain brick: " + str(len(self._brick)), 1,
-            self.scene.height - 41, "#FFFFFF", "18px Arial")
+            "remain brick: " + str(len(self._brick)),
+            1,
+            self.scene.height - 41,
+            "#FFFFFF",
+            "18px Arial",
+        )
         remain_hard_brick_text = create_text_view_data(
-            "remain hard brick: " + str(len(self._hard_brick)), 1,
-            self.scene.height - 61, "#FFFFFF", "18px Arial")
+            "remain hard brick: " + str(len(self._hard_brick)),
+            1,
+            self.scene.height - 61,
+            "#FFFFFF",
+            "18px Arial",
+        )
         foreground = [catch_ball_text, remain_brick_text, remain_hard_brick_text]
         # foreground.extend(lines)
 
         scene_progress = create_scene_progress_data(
-            frame=self.frame_count, object_list=game_obj_list,
-            foreground=foreground)
+            frame=self.frame_count, object_list=game_obj_list, foreground=foreground
+        )
         return scene_progress
 
     @check_game_result
@@ -155,13 +180,11 @@ class Arkanoid(PaiaGame):
             "state": self.game_result_state,
             "attachment": [
                 {
-                    "player": self.ai_clients()[0]['name'],
+                    "player": self.ai_clients()[0]["name"],
                     "brick_remain": len(self._brick) + 2 * len(self._hard_brick),
-                    "count_of_catching_ball": self._ball.hit_platform_times
-
+                    "count_of_catching_ball": self._ball.hit_platform_times,
                 }
-            ]
-
+            ],
         }
 
     def get_keyboard_command(self):
@@ -183,38 +206,43 @@ class Arkanoid(PaiaGame):
         return {ai_1p: cmd_1p}
 
     def _create_init_scene(self):
-        '''
+        """
         初始遊戲畫面：
         1. 球
         2. 板子
         3. 磚塊
-        '''
+        """
         self._create_moves()
         self._create_bricks(self.level)
 
     def _create_moves(self):
         self._group_move = pygame.sprite.RenderPlain()
         enable_slide_ball = False if self.difficulty == "EASY" else True
-        self._ball = Ball((93, 395), pygame.Rect(0, 0, 200, 500), enable_slide_ball, self._group_move)
-        self._platform = Platform((75, 400), pygame.Rect(0, 0, 200, 500), self._group_move)
+        self._ball = Ball(
+            (93, 395), pygame.Rect(0, 0, 200, 500), enable_slide_ball, self._group_move
+        )
+        self._platform = Platform(
+            (random.randint(0, 200), 400), pygame.Rect(0, 0, 200, 500), self._group_move
+        )
 
     def _create_bricks(self, level: int):
         def get_coordinate_and_type(string):
-            string = string.rstrip("\n").split(' ')
+            string = string.rstrip("\n").split(" ")
             return int(string[0]), int(string[1]), int(string[2])
 
         self._group_brick = pygame.sprite.RenderPlain()
         self._brick_container = []
 
         import os.path as path
-        asset_path = path.join(path.dirname(__file__), '..', 'asset')
+
+        asset_path = path.join(path.dirname(__file__), "..", "asset")
 
         level_file_path = path.join(asset_path, "level_data/{0}.dat".format(level))
         if not path.exists(level_file_path):
             print("level is not existed , turn to level 1")
             level_file_path = path.join(asset_path, "level_data/{0}.dat".format(1))
 
-        with open(level_file_path, 'r') as input_file:
+        with open(level_file_path, "r") as input_file:
             offset_x, offset_y, _ = get_coordinate_and_type(input_file.readline())
             for input_pos in input_file:
                 pos_x, pos_y, type = get_coordinate_and_type(input_pos.rstrip("\n"))
@@ -223,8 +251,9 @@ class Arkanoid(PaiaGame):
                     1: HardBrick,
                 }.get(type, Brick)
 
-                brick = BrickType((pos_x + offset_x, pos_y + offset_y),
-                                  self._group_brick)
+                brick = BrickType(
+                    (pos_x + offset_x, pos_y + offset_y), self._group_brick
+                )
                 self._brick_container.append(brick)
 
                 if BrickType == Brick:
@@ -238,6 +267,4 @@ class Arkanoid(PaiaGame):
         let MLGame know how to parse your ai,
         you can also use this names to get different cmd and send different data to each ai client
         """
-        return [
-            {"name": "1P"}
-        ]
+        return [{"name": "1P"}]
